@@ -23,7 +23,13 @@ Add-Type -AssemblyName System.Drawing
                                           
 $today = $(Get-Date -Format yyyy-MM-dd).ToString()
 $yesterday = ((Get-Date).AddDays(-1)).ToString("yyyy-MM-ddT00:00:00Z")
-$toDateTime = ((Get-Date).AddDays(1)).ToString("yyyy-MM-ddThh:mm:ssZ")
+$endOfToday = ((Get-Date).AddDays(1)).ToString("yyyy-MM-ddThh:mm:ssZ")
+
+$currDateTime = (Get-Date -Format yyyy-MM-dd)
+$startDateTime = [datetime]"2024-03-02"
+
+$daysSince = $(New-TimeSpan -Start $startDateTime -End $currDateTime).Days
+
 
 # Google API Authorization
 $scope = "https://www.googleapis.com/auth/calendar"
@@ -40,14 +46,46 @@ catch {
   $err.Response
 }
 
+#Calendar to connect with
+$requestUri = "https://www.googleapis.com/calendar/v3/calendars/0ed0cbe93c405a650e5c2f535fae9ff8e170fc3d917b717942bd8950037dff65@group.calendar.google.com/events/"
+
+#Get egg count from yesterday
+$eventsBody = @{"timeMin" = "$yesterday"
+                "timeMax" = "$endOfToday"
+                "maxEvents" = 15
+}
+$calEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
+  -Uri $requestUri `
+  -Method Get `
+  -Body $eventsBody `
+  -ContentType 'application/json'
+
+foreach ($item in $($calEvents.items)) {
+  if (($item.summary).contains("`u{1F95A}")) {
+    $curr = $($item.summary).Replace("`u{1F95A}", "")
+
+    if ($currCount -lt $curr) {
+      $currCount = $curr
+    }
+  }
+  
+}
+
+#get/create stats to be displyed
+$dailyAvg = $currCount/$daysSince
+$weeklyAvg = $currCount/($daysSince/7)
+$monthlyAvg = $currCount/($daysSince/30)
+
+
+
 #Gui Creation and user input for egg count
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Data Entry Form'
-$form.Size = New-Object System.Drawing.Size(300, 200)
+$form.Size = New-Object System.Drawing.Size(300, 300)
 $form.StartPosition = 'CenterScreen'
 
 $okButton = New-Object System.Windows.Forms.Button
-$okButton.Location = New-Object System.Drawing.Point(75, 120)
+$okButton.Location = New-Object System.Drawing.Point(75, 160)
 $okButton.Size = New-Object System.Drawing.Size(75, 23)
 $okButton.Text = 'OK'
 $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
@@ -55,7 +93,7 @@ $form.AcceptButton = $okButton
 $form.Controls.Add($okButton)
 
 $cancelButton = New-Object System.Windows.Forms.Button
-$cancelButton.Location = New-Object System.Drawing.Point(150, 120)
+$cancelButton.Location = New-Object System.Drawing.Point(150, 160)
 $cancelButton.Size = New-Object System.Drawing.Size(75, 23)
 $cancelButton.Text = 'Cancel'
 $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
@@ -65,7 +103,7 @@ $form.Controls.Add($cancelButton)
 $label = New-Object System.Windows.Forms.Label
 $label.Location = New-Object System.Drawing.Point(10, 20)
 $label.Size = New-Object System.Drawing.Size(280, 20)
-$label.Text = 'How many Eggs to add?:'
+$label.Text = 'How many Eggs to add?'
 $form.Controls.Add($label)
 
 $textBox = New-Object System.Windows.Forms.TextBox
@@ -85,6 +123,14 @@ $textBox.Add_TextChanged({
   })
 $form.Controls.Add($textBox)
 
+$label = New-Object System.Windows.Forms.Label
+$label.Location = New-Object System.Drawing.Point(10, 70)
+$label.Size = New-Object System.Drawing.Size(280, 80)
+$label.Text = "Egg Stats
+Daily Egg Avg: $([math]::round($dailyAvg,2))
+Weekly Egg Avg: $([math]::round($weeklyAvg,2))
+Monthly Egg Avg: $([math]::round($monthlyAvg,2))"
+$form.Controls.Add($label)
 $form.Topmost = $true
 
 $form.Add_Shown({ $textBox.Select() })
@@ -95,30 +141,6 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
   [int]$newEggs = $x
 }
 
-#Calendar to connect with
-$requestUri = "https://www.googleapis.com/calendar/v3/calendars/0ed0cbe93c405a650e5c2f535fae9ff8e170fc3d917b717942bd8950037dff65@group.calendar.google.com/events/"
-
-#Get egg count from yesterday
-$eventsBody = @{"timeMin" = "$yesterday"
-                "timeMax" = "$toDateTime"
-                "maxEvents" = 15
-}
-$calEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
-  -Uri $requestUri `
-  -Method Get `
-  -Body $eventsBody `
-  -ContentType 'application/json'
-
-foreach ($item in $($calEvents.items)) {
-  if (($item.summary).contains("`u{1F95A}")) {
-    $curr = $($item.summary).Replace("`u{1F95A}", "")
-
-    if ($currCount -lt $curr) {
-      $currCount = $curr
-    }
-  }
-  
-}
 
 #loop through creating each all day egg count with emoji
 for ($i = 0; $i -lt $newEggs; $i++) {
