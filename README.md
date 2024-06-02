@@ -1,0 +1,1 @@
+Counter to count eggs.
