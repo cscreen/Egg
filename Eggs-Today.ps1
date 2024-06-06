@@ -97,53 +97,70 @@ function Get-StatData {
   $eggsPerDay = [int[]]::new(7)
   $numDays = [int[]]::new(7)
   $currStart = ($dateTime.ToString("yyyy-MM-ddT00:00:00Z"))
-  $currEnd = ($dateTime.toString("yyyy-MM-ddT23:59:59Z"))
-  $idx = $(New-TimeSpan -Start $currStart -End $(Get-Date -Format yyyy-MM-ddT00:00:00Z)).Days
+  $currEnd = ((Get-Date).AddDays(1)).ToString("yyyy-MM-ddT00:00:00Z")
 
-  
-  for ($i = 0; $i -lt $idx; $i++) {
-    Write-Progress -Activity "Data Collection in Progress" -Status "$i% Complete:" -PercentComplete $i
-
-    #Get egg count from yesterday
-    $statsEventsBody = @{"timeMin" = "$currStart"
-      "timeMax"                    = "$currEnd"
-      "maxEvents"                  = 15
-    }
-    $statsCalEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
-      -Uri $requestUri `
-      -Method Get `
-      -Body $statsEventsBody `
-      -ContentType 'application/json'
-
-    $count = 0
-    foreach ($item in $($statsCalEvents.items)) {
-      if (($item.summary).contains("`u{1F95A}")) {
-        $count += 1
-      }
-    }
-
-    $currDay = $dateTime.DayOfWeek
-      
-    switch ($currDay) {
-      "Monday" { $eggsPerDay[0] += $count; $numDays[0]++ }
-      "Tuesday" { $eggsPerDay[1] += $count; $numDays[1]++ }
-      "Wednesday" { $eggsPerDay[2] += $count; $numDays[2]++ }
-      "Thursday" { $eggsPerDay[3] += $count; $numDays[3]++ }
-      "Friday" { $eggsPerDay[4] += $count; $numDays[4]++ }
-      "Saturday" { $eggsPerDay[5] += $count; $numDays[5]++ }
-      "Sunday" { $eggsPerDay[6] += $count; $numDays[6]++ }
-      Default { Throw "something happened!!!" }
-    }
-
-    $dateTime = $dateTime.AddDays(1)
-    $currStart = ($dateTime.ToString("yyyy-MM-ddT00:00:00Z"))
-    $currEnd = ($dateTime.toString("yyyy-MM-ddT23:59:59Z"))
+  #Get egg count from start
+  $statsEventsBody = @{"timeMin" = "$currStart"
+    "timeMax"                    = "$currEnd"
+    "maxResults"                 = 2500
+    "singleEvents"               = "$true"
+    "orderBy"                    = "startTime"
   }
-  
+  $statsCalEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
+    -Uri $requestUri `
+    -Method Get `
+    -Body $statsEventsBody `
+    -ContentType 'application/json'
+
+  $currDay = $dateTime
+  $oldDay = $dateTime
+  foreach ($item in $($statsCalEvents.items)) {
+    $currDay = ([datetime]$item.start.date)
+    
+    if (($item.summary).contains("`u{1F95A}")) {
+      if ($oldDay -lt $currDay) {
+        switch ($oldDay.DayOfWeek) {
+          "Monday" { $numDays[0]++ }
+          "Tuesday" { $numDays[1]++ }
+          "Wednesday" { $numDays[2]++ }
+          "Thursday" { $numDays[3]++ }
+          "Friday" { $numDays[4]++ }
+          "Saturday" { $numDays[5]++ }
+          "Sunday" { $numDays[6]++ }
+          Default { Throw "something happened!!!" }
+        }
+      }
+
+      switch ($currDay.DayOfWeek) {
+        "Monday" { $eggsPerDay[0]++ }
+        "Tuesday" { $eggsPerDay[1]++ }
+        "Wednesday" { $eggsPerDay[2]++ }
+        "Thursday" { $eggsPerDay[3]++ }
+        "Friday" { $eggsPerDay[4]++ }
+        "Saturday" { $eggsPerDay[5]++ }
+        "Sunday" { $eggsPerDay[6]++ }
+        Default { Throw "something happened!!!" }
+      }
+      
+    }
+    $oldDay = $currDay
+  }
+  switch ($currDay.DayOfWeek) {
+    "Monday" { $numDays[0]++ }
+    "Tuesday" { $numDays[1]++ }
+    "Wednesday" { $numDays[2]++ }
+    "Thursday" { $numDays[3]++ }
+    "Friday" { $numDays[4]++ }
+    "Saturday" { $numDays[5]++ }
+    "Sunday" { $numDays[6]++ }
+    Default { Throw "something happened!!!" }
+  }
+
+
   for ($i = 0; $i -lt $advStats.Count; $i++) {
     $advStats[$i] = @($eggsPerDay[$i], $numDays[$i])
   }
-  
+
   return $advStats
 }
 
