@@ -207,9 +207,10 @@ function Get-AdvancedStats {
   )
 
   #collect data
+  $start = Get-Date
   $statsArr = Get-StatData -dateTime $dateTime
-
-  Clear-Host
+  $end = Get-Date
+  Write-host "$(New-TimeSpan -Start $start -End $end)"
 
   #Gui Creation and user input for egg count
   $statsForm = New-Object System.Windows.Forms.Form
