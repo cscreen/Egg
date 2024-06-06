@@ -148,7 +148,7 @@ function Get-StatData {
     -Body $statsEventsBody `
     -ContentType 'application/json'
 
-  $($statsCalEvents.items) | Foreach-Object -ThrottleLimit 7 -Parallel {
+  $($statsCalEvents.items) | Foreach-Object -ThrottleLimit 200 -Parallel {
     $currDay = ([datetime]$PSItem.start.date)
 
     if (($PSItem.summary).contains("`u{1F95A}")) {

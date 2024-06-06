@@ -29,6 +29,8 @@ $currDateTime = (Get-Date -Format yyyy-MM-dd)
 $startDateTime = [datetime]"2024-03-02"
 
 $daysSince = $(New-TimeSpan -Start $startDateTime -End $currDateTime).Days
+$weeksSince = $daysSince / 7
+$monthsSince = $daysSince / 30
 
 #Calendar to connect with
 $requestUri = "https://www.googleapis.com/calendar/v3/calendars/0ed0cbe93c405a650e5c2f535fae9ff8e170fc3d917b717942bd8950037dff65@group.calendar.google.com/events/"
@@ -88,82 +90,6 @@ function Get-YesterdayEggs {
   return $currCount
 }
 
-function Get-StatData {
-  param (
-    [datetime]$dateTime
-  )
-
-  $advStats = [array[]]::new(7)
-  $eggsPerDay = [int[]]::new(7)
-  $numDays = [int[]]::new(7)
-  $currStart = ($dateTime.ToString("yyyy-MM-ddT00:00:00Z"))
-  $currEnd = ((Get-Date).AddDays(1)).ToString("yyyy-MM-ddT00:00:00Z")
-
-  #Get egg count from start
-  $statsEventsBody = @{"timeMin" = "$currStart"
-    "timeMax"                    = "$currEnd"
-    "maxResults"                 = 2500
-    "singleEvents"               = "$true"
-    "orderBy"                    = "startTime"
-  }
-  $statsCalEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
-    -Uri $requestUri `
-    -Method Get `
-    -Body $statsEventsBody `
-    -ContentType 'application/json'
-
-  $currDay = $dateTime
-  $oldDay = $dateTime
-  foreach ($item in $($statsCalEvents.items)) {
-    $currDay = ([datetime]$item.start.date)
-    
-    if (($item.summary).contains("`u{1F95A}")) {
-      if ($oldDay -lt $currDay) {
-        switch ($oldDay.DayOfWeek) {
-          "Monday" { $numDays[0]++ }
-          "Tuesday" { $numDays[1]++ }
-          "Wednesday" { $numDays[2]++ }
-          "Thursday" { $numDays[3]++ }
-          "Friday" { $numDays[4]++ }
-          "Saturday" { $numDays[5]++ }
-          "Sunday" { $numDays[6]++ }
-          Default { Throw "something happened!!!" }
-        }
-      }
-
-      switch ($currDay.DayOfWeek) {
-        "Monday" { $eggsPerDay[0]++ }
-        "Tuesday" { $eggsPerDay[1]++ }
-        "Wednesday" { $eggsPerDay[2]++ }
-        "Thursday" { $eggsPerDay[3]++ }
-        "Friday" { $eggsPerDay[4]++ }
-        "Saturday" { $eggsPerDay[5]++ }
-        "Sunday" { $eggsPerDay[6]++ }
-        Default { Throw "something happened!!!" }
-      }
-      
-    }
-    $oldDay = $currDay
-  }
-  switch ($currDay.DayOfWeek) {
-    "Monday" { $numDays[0]++ }
-    "Tuesday" { $numDays[1]++ }
-    "Wednesday" { $numDays[2]++ }
-    "Thursday" { $numDays[3]++ }
-    "Friday" { $numDays[4]++ }
-    "Saturday" { $numDays[5]++ }
-    "Sunday" { $numDays[6]++ }
-    Default { Throw "something happened!!!" }
-  }
-
-
-  for ($i = 0; $i -lt $advStats.Count; $i++) {
-    $advStats[$i] = @($eggsPerDay[$i], $numDays[$i])
-  }
-
-  return $advStats
-}
-
 function Add-NewEggs {
   param (
     [int]$newEggs
@@ -201,7 +127,51 @@ function Add-NewEggs {
   
 }
 
-function Get-AdvancedStats {
+function Get-StatData {
+  param (
+    [datetime]$dateTime
+  )
+
+  $eggsPerDay = [int[]]::new(7)
+  $currStart = ($dateTime.ToString("yyyy-MM-ddT00:00:00Z"))
+  $currEnd = ((Get-Date).AddDays(1)).ToString("yyyy-MM-ddT00:00:00Z")
+
+  #Get egg count from start
+  $statsEventsBody = @{"timeMin" = "$currStart"
+    "timeMax"                    = "$currEnd"
+    "maxResults"                 = 2500
+    "singleEvents"               = "$true"
+    "orderBy"                    = "startTime"
+  }
+  $statsCalEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
+    -Uri $requestUri `
+    -Method Get `
+    -Body $statsEventsBody `
+    -ContentType 'application/json'
+
+  foreach ($item in $($statsCalEvents.items)) {
+    $currDay = ([datetime]$item.start.date)
+    
+    if (($item.summary).contains("`u{1F95A}")) {
+
+      switch ($currDay.DayOfWeek) {
+        "Monday" { $eggsPerDay[0]++ }
+        "Tuesday" { $eggsPerDay[1]++ }
+        "Wednesday" { $eggsPerDay[2]++ }
+        "Thursday" { $eggsPerDay[3]++ }
+        "Friday" { $eggsPerDay[4]++ }
+        "Saturday" { $eggsPerDay[5]++ }
+        "Sunday" { $eggsPerDay[6]++ }
+        Default { Throw "something happened!!!" }
+      }
+      
+    }
+  }
+
+  return $eggsPerDay
+}
+
+function Show-StatData {
   param (
     [datetime]$dateTime
   )
@@ -231,13 +201,13 @@ function Get-AdvancedStats {
   $label.Size = New-Object System.Drawing.Size(280, 160)
   $label.Text = "DayOfWeek Total Avgerage
 
-Monday:       $($statsArr[0][0])   $([math]::round($($statsArr[0][0])/$($statsArr[0][1]),2))
-Tuesday:      $($statsArr[1][0])   $([math]::round($($statsArr[1][0])/$($statsArr[1][1]),2))
-Wednesday: $($statsArr[2][0])   $([math]::round($($statsArr[2][0])/$($statsArr[2][1]),2))
-Thursday:   $($statsArr[3][0])   $([math]::round($($statsArr[3][0])/$($statsArr[3][1]),2))
-Friday:        $($statsArr[4][0])   $([math]::round($($statsArr[4][0])/$($statsArr[4][1]),2))
-Saturday:   $($statsArr[5][0])   $([math]::round($($statsArr[5][0])/$($statsArr[5][1]),2))
-Sunday:      $($statsArr[6][0])   $([math]::round($($statsArr[6][0])/$($statsArr[6][1]),2))
+Monday:       $($statsArr[0])   $([math]::round($($statsArr[0][0])/$weeksSince,2))
+Tuesday:      $($statsArr[1])   $([math]::round($($statsArr[1][0])/$weeksSince,2))
+Wednesday: $($statsArr[2])   $([math]::round($($statsArr[2][0])/$weeksSince,2))
+Thursday:   $($statsArr[3])   $([math]::round($($statsArr[3][0])/$weeksSince,2))
+Friday:        $($statsArr[4])   $([math]::round($($statsArr[4][0])/$weeksSince,2))
+Saturday:   $($statsArr[5])   $([math]::round($($statsArr[5][0])/$weeksSince,2))
+Sunday:      $($statsArr[6])   $([math]::round($($statsArr[6][0])/$weeksSince,2))
 "
   $statsForm.Controls.Add($label)
   $statsForm.Topmost = $true
@@ -259,8 +229,8 @@ $eggCount = Get-YesterdayEggs -Start $yesterday -End $endOfToday
 
 #get/create stats to be displyed
 $dailyAvg = $eggCount / $daysSince
-$weeklyAvg = $eggCount / ($daysSince / 7)
-$monthlyAvg = $eggCount / ($daysSince / 30)
+$weeklyAvg = $eggCount / $weeksSince
+$monthlyAvg = $eggCount / $monthsSince
 
 #Gui Creation and user input for egg count
 $form = New-Object System.Windows.Forms.Form
@@ -281,7 +251,7 @@ $statButton.Location = New-Object System.Drawing.Point(150, 160)
 $statButton.Size = New-Object System.Drawing.Size(75, 23)
 $statButton.Text = 'More Stats'
 $form.Controls.Add($statButton)
-$statButton.Add_Click({ Get-AdvancedStats -dateTime $startDateTime })
+$statButton.Add_Click({ Show-StatData -dateTime $startDateTime })
 
 $label = New-Object System.Windows.Forms.Label
 $label.Location = New-Object System.Drawing.Point(10, 20)
