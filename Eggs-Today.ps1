@@ -7,7 +7,6 @@ Add-Type -AssemblyName System.Drawing
 
 ############################## VARIABLES #################################
 #set local vars
-[int]$currCount = 0
 [int]$newEggs = 0
 [System.Collections.ArrayList]$emojis = @("`u{1F61C}", `
     "`u{1F61D}", `
@@ -31,6 +30,9 @@ $startDateTime = [datetime]"2024-03-02"
 
 $daysSince = $(New-TimeSpan -Start $startDateTime -End $currDateTime).Days
 
+#Calendar to connect with
+$requestUri = "https://www.googleapis.com/calendar/v3/calendars/0ed0cbe93c405a650e5c2f535fae9ff8e170fc3d917b717942bd8950037dff65@group.calendar.google.com/events/"
+
 ########################## FUNCTION ############################################
 function Get-AccessToken {
   # Google API Authorization
@@ -50,12 +52,47 @@ function Get-AccessToken {
   }
   
 }
+$accessToken = Get-AccessToken
+
+function Get-YesterdayEggs {
+  param (
+    [string]$start,
+    [String]$end
+  )
+
+
+  
+  [int]$currCount = 0
+
+  #Get egg count from yesterday
+  $eventsBody = @{"timeMin" = "$start"
+    "timeMax"               = "$end"
+    "maxEvents"             = 15
+  }
+  $calEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
+    -Uri $requestUri `
+    -Method Get `
+    -Body $eventsBody `
+    -ContentType 'application/json'
+
+  foreach ($item in $($calEvents.items)) {
+    if (($item.summary).contains("`u{1F95A}")) {
+      $curr = $($item.summary).Replace("`u{1F95A}", "")
+
+      if ($currCount -lt $curr) {
+        $currCount = $curr
+      }
+    }
+  
+  }
+  return $currCount
+}
+
 function Get-StatData {
   param (
     [datetime]$dateTime
   )
 
-  $accessToken = Get-AccessToken
   $advStats = [array[]]::new(7)
   $eggsPerDay = [int[]]::new(7)
   $numDays = [int[]]::new(7)
@@ -67,16 +104,13 @@ function Get-StatData {
   for ($i = 0; $i -lt $idx; $i++) {
     Write-Progress -Activity "Data Collection in Progress" -Status "$i% Complete:" -PercentComplete $i
 
-    #Calendar to connect with
-    $statsRequestUri = "https://www.googleapis.com/calendar/v3/calendars/0ed0cbe93c405a650e5c2f535fae9ff8e170fc3d917b717942bd8950037dff65@group.calendar.google.com/events/"
-
     #Get egg count from yesterday
     $statsEventsBody = @{"timeMin" = "$currStart"
       "timeMax"                    = "$currEnd"
       "maxEvents"                  = 15
     }
     $statsCalEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
-      -Uri $statsRequestUri `
+      -Uri $requestUri `
       -Method Get `
       -Body $statsEventsBody `
       -ContentType 'application/json'
@@ -90,16 +124,16 @@ function Get-StatData {
 
     $currDay = $dateTime.DayOfWeek
       
-      switch ($currDay) {
-        "Monday" { $eggsPerDay[0] += $count; $numDays[0]++ }
-        "Tuesday" { $eggsPerDay[1] += $count; $numDays[1]++ }
-        "Wednesday" { $eggsPerDay[2] += $count; $numDays[2]++ }
-        "Thursday" { $eggsPerDay[3] += $count; $numDays[3]++ }
-        "Friday" { $eggsPerDay[4] += $count; $numDays[4]++ }
-        "Saturday" { $eggsPerDay[5] += $count; $numDays[5]++ }
-        "Sunday" { $eggsPerDay[6] += $count; $numDays[6]++ }
-        Default { Throw "something happened!!!" }
-      }
+    switch ($currDay) {
+      "Monday" { $eggsPerDay[0] += $count; $numDays[0]++ }
+      "Tuesday" { $eggsPerDay[1] += $count; $numDays[1]++ }
+      "Wednesday" { $eggsPerDay[2] += $count; $numDays[2]++ }
+      "Thursday" { $eggsPerDay[3] += $count; $numDays[3]++ }
+      "Friday" { $eggsPerDay[4] += $count; $numDays[4]++ }
+      "Saturday" { $eggsPerDay[5] += $count; $numDays[5]++ }
+      "Sunday" { $eggsPerDay[6] += $count; $numDays[6]++ }
+      Default { Throw "something happened!!!" }
+    }
 
     $dateTime = $dateTime.AddDays(1)
     $currStart = ($dateTime.ToString("yyyy-MM-ddT00:00:00Z"))
@@ -112,6 +146,44 @@ function Get-StatData {
   
   return $advStats
 }
+
+function Add-NewEggs {
+  param (
+    [int]$newEggs
+  )
+
+  #loop through creating each all day egg count with emoji
+  for ($i = 0; $i -lt $newEggs; $i++) {
+    $currEgg = $eggCount + $i + 1
+    #Event to create
+    $body = @{
+      "summary"      = "`u{1F95A}$currEgg"
+      start          = @{"date" = "$today" }
+      end            = @{"date" = "$today" }
+      "transparency" = "transparent"
+    }
+    $json = $body | ConvertTo-Json
+    $response = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
+      -Uri $requestUri `
+      -Method Post `
+      -Body $json `
+      -ContentType 'application/json'
+
+    if ($response.status -ne "confirmed") {
+      Write-Host $response
+      Read-Host -Prompt "Press Enter to exit"
+      Exit-PSSession
+    }
+    else {
+      Write-Host "`u{1F95A}$currEgg added. $($emojis | Get-Random)"
+    }
+  
+    Start-Sleep -Milliseconds 500
+  
+  }
+  
+}
+
 function Get-AdvancedStats {
   param (
     [datetime]$dateTime
@@ -129,7 +201,7 @@ function Get-AdvancedStats {
   $statsForm.StartPosition = 'CenterParent'
 
   $backButton = New-Object System.Windows.Forms.Button
-  $backButton.Location = New-Object System.Drawing.Point(75, 175)
+  $backButton.Location = New-Object System.Drawing.Point(100, 175)
   $backButton.Size = New-Object System.Drawing.Size(75, 23)
   $backButton.Text = 'EXIT'
   $backButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
@@ -164,37 +236,13 @@ Sunday:      $($statsArr[6][0])   $([math]::round($($statsArr[6][0])/$($statsArr
 
 
 ############################ EXECUTION ##############################################
-$accessToken = Get-AccessToken
-
-#Calendar to connect with
-$requestUri = "https://www.googleapis.com/calendar/v3/calendars/0ed0cbe93c405a650e5c2f535fae9ff8e170fc3d917b717942bd8950037dff65@group.calendar.google.com/events/"
-
-#Get egg count from yesterday
-$eventsBody = @{"timeMin" = "$yesterday"
-  "timeMax"               = "$endOfToday"
-  "maxEvents"             = 15
-}
-$calEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
-  -Uri $requestUri `
-  -Method Get `
-  -Body $eventsBody `
-  -ContentType 'application/json'
-
-foreach ($item in $($calEvents.items)) {
-  if (($item.summary).contains("`u{1F95A}")) {
-    $curr = $($item.summary).Replace("`u{1F95A}", "")
-
-    if ($currCount -lt $curr) {
-      $currCount = $curr
-    }
-  }
-  
-}
+#get egg count from yesterday
+$eggCount = Get-YesterdayEggs -Start $yesterday -End $endOfToday
 
 #get/create stats to be displyed
-$dailyAvg = $currCount / $daysSince
-$weeklyAvg = $currCount / ($daysSince / 7)
-$monthlyAvg = $currCount / ($daysSince / 30)
+$dailyAvg = $eggCount / $daysSince
+$weeklyAvg = $eggCount / ($daysSince / 7)
+$monthlyAvg = $eggCount / ($daysSince / 30)
 
 #Gui Creation and user input for egg count
 $form = New-Object System.Windows.Forms.Form
@@ -205,25 +253,17 @@ $form.StartPosition = 'CenterScreen'
 $okButton = New-Object System.Windows.Forms.Button
 $okButton.Location = New-Object System.Drawing.Point(75, 160)
 $okButton.Size = New-Object System.Drawing.Size(75, 23)
-$okButton.Text = 'OK'
+$okButton.Text = 'Add'
 $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
 $form.AcceptButton = $okButton
 $form.Controls.Add($okButton)
 
 $statButton = New-Object System.Windows.Forms.Button
-$statButton.Location = New-Object System.Drawing.Point(110, 183)
+$statButton.Location = New-Object System.Drawing.Point(150, 160)
 $statButton.Size = New-Object System.Drawing.Size(75, 23)
 $statButton.Text = 'More Stats'
 $form.Controls.Add($statButton)
 $statButton.Add_Click({ Get-AdvancedStats -dateTime $startDateTime })
-
-$cancelButton = New-Object System.Windows.Forms.Button
-$cancelButton.Location = New-Object System.Drawing.Point(150, 160)
-$cancelButton.Size = New-Object System.Drawing.Size(75, 23)
-$cancelButton.Text = 'Cancel'
-$cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
-$form.CancelButton = $cancelButton
-$form.Controls.Add($cancelButton)
 
 $label = New-Object System.Windows.Forms.Label
 $label.Location = New-Object System.Drawing.Point(10, 20)
@@ -263,36 +303,5 @@ $result = $form.ShowDialog()
 
 if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
   $x = $textBox.Text
-  [int]$newEggs = $x
-}
-
-
-#loop through creating each all day egg count with emoji
-for ($i = 0; $i -lt $newEggs; $i++) {
-  $currEgg = $currCount + $i + 1
-  #Event to create
-  $body = @{
-    "summary"      = "`u{1F95A}$currEgg"
-    start          = @{"date" = "$today" }
-    end            = @{"date" = "$today" }
-    "transparency" = "transparent"
-  }
-  $json = $body | ConvertTo-Json
-  $response = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
-    -Uri $requestUri `
-    -Method Post `
-    -Body $json `
-    -ContentType 'application/json'
-
-  if ($response.status -ne "confirmed") {
-    Write-Host $response
-    Read-Host -Prompt "Press Enter to exit"
-    Exit-PSSession
-  }
-  else {
-    Write-Host "`u{1F95A}$currEgg added. $($emojis | Get-Random)"
-  }
-  
-  Start-Sleep -Milliseconds 500
-  
+  Add-NewEggs -newEggs $x
 }
