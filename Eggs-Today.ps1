@@ -70,6 +70,7 @@ function Get-YesterdayEggs {
   $eventsBody = @{"timeMin" = "$start"
     "timeMax"               = "$end"
     "maxEvents"             = 15
+    "singleEvents"               = "$true"
   }
   $calEvents = Invoke-RestMethod -Headers @{"Authorization" = "Bearer $accessToken" } `
     -Uri $requestUri `
