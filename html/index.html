@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head><meta charset="UTF-8" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="index.css">
+    <title>
+        Egg Counter
+    </title>
+</head>
+
+ <body onload="getCurrentEggData()">
+    <h1>
+        How many eggs to add?
+    </h1>
+    <br>
+    <div class="statsBlock">
+        <div class="statsContainer">
+        <h2 id="dailyAvg">Daily Avg: </h2>
+        <h2 id="weeklyAvg">Weekly Avg: </h2>
+        <h2 id="monthlyAvg">Monthly Avg: </h2>
+        <h2 id="totalEggs">Total: </h2>
+        </div>
+
+        <div class="advStatsContainer">
+        <h2 id="monTot" class="mon">Mon: </h2>
+        <h2 id="tueTot" class="tue">Tue: </h2>
+        <h2 id="wedTot" class="wed">Wed: </h2>
+        <h2 id="thuTot" class="thu">Thu: </h2>
+        <h2 id="friTot" class="fri">Fri: </h2>
+        <h2 id="satTot" class="sat">Sat: </h2>
+        <h2 id="sunTot" class="sun">Sun: </h2>
+        </div>
+
+        <div class="avgStatsContainer">
+            <h2 id="monAvg" class="mon">Avg: </h2>
+            <h2 id="tueAvg" class="tue">Avg: </h2>
+            <h2 id="wedAvg" class="wed">Avg: </h2>
+            <h2 id="thuAvg" class="thu">Avg: </h2>
+            <h2 id="friAvg" class="fri">Avg: </h2>
+            <h2 id="satAvg" class="sat">Avg: </h2>
+            <h2 id="sunAvg" class="sun">Avg: </h2>
+            </div>
+    </div>
+    </body>
+    <br>
+    <form onsubmit="return false">
+        <label for="fnewEggs">Enter number of eggs:</label><br>
+        <input type="text" inputmode="numeric" pattern="[0-9]" required id="fnewEggs" name="fnewEggs"><br>
+        <input type="button" value="Add" id="add_button" onclick="addNewEggs()">
+    </form>
+
+    <pre id="content" style="white-space: pre-wrap;"></pre>
+    <script type="text/javascript" src="./config.js"></script>
+    <script type="text/javascript" src="./index.js"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
+    
+</body>
+
+</html>
