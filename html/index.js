@@ -225,7 +225,7 @@ function addNewEggs() {
   if (Number(eggsToAdd) > 10) {
     document.getElementById('content').innerText = "No way. Try again"
   } else {
-    document.getElementById('content').innerText = "Adding " + Number(eggsToAdd) + " Egg(s)"
+    document.getElementById('content').innerText = "Adding " + eggsToAdd + " Egg(s)"
     document.getElementById("fnewEggs").value = "";
     for (let index = 1; index <= eggsToAdd; index++) {
       var title = "";
