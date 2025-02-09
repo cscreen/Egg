@@ -22,7 +22,7 @@ Add-Type -AssemblyName System.Drawing
 )
                                           
 $today = $(Get-Date -Format yyyy-MM-dd).ToString()
-$yesterday = ((Get-Date).AddDays(-1)).ToString("yyyy-MM-ddT00:00:00Z")
+$yesterday = ((Get-Date).AddDays(-7)).ToString("yyyy-MM-ddT00:00:00Z")
 $endOfToday = ((Get-Date).AddDays(1)).ToString("yyyy-MM-ddThh:mm:ssZ")
 
 $currDateTime = (Get-Date -Format yyyy-MM-dd)
