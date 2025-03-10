@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="index.css">
+    <title>Egg Counter</title>
+</head>
+
+<body>
+    <h1>How many eggs to add?</h1>
+    <br>
+    <div class="statsBlock">
+        <div class="statsContainer">
+            <h2 id="dailyAvg">Daily Avg: </h2>
+            <h2 id="weeklyAvg">Weekly Avg: </h2>
+            <h2 id="monthlyAvg">Monthly Avg: </h2>
+            <h2 id="totalEggs">Total: </h2>
+        </div>
+        <div class="advStatsContainer">
+            <h2 id="monTot" class="mon">Mon: </h2>
+            <h2 id="tueTot" class="tue">Tue: </h2>
+            <h2 id="wedTot" class="wed">Wed: </h2>
+            <h2 id="thuTot" class="thu">Thu: </h2>
+            <h2 id="friTot" class="fri">Fri: </h2>
+            <h2 id="satTot" class="sat">Sat: </h2>
+            <h2 id="sunTot" class="sun">Sun: </h2>
+        </div>
+        <div class="avgStatsContainer">
+            <h2 id="monAvg" class="mon">Avg: </h2>
+            <h2 id="tueAvg" class="tue">Avg: </h2>
+            <h2 id="wedAvg" class="wed">Avg: </h2>
+            <h2 id="thuAvg" class="thu">Avg: </h2>
+            <h2 id="friAvg" class="fri">Avg: </h2>
+            <h2 id="satAvg" class="sat">Avg: </h2>
+            <h2 id="sunAvg" class="sun">Avg: </h2>
+        </div>
+    </div>
+    <br>
+    <form id="eggForm" onsubmit="return false">
+        <label for="fnewEggs">Enter number of eggs:</label><br>
+        <input type="text" inputmode="numeric" pattern="[0-9]" required id="fnewEggs" name="fnewEggs"><br>
+        <input type="button" value="Add" id="add_button" onclick="addNewEggs()">
+    </form>
+
+    <pre id="content" style="white-space: pre-wrap;"></pre>
+
+    <script>
+        async function getCurrentEggData() {
+            try {
+                const response = await fetch('/eggs');
+                const data = await response.json();
+                document.getElementById('dailyAvg').innerText += " " + data.dailyAvg;
+                document.getElementById('weeklyAvg').innerText += " " + data.weeklyAvg;
+                document.getElementById('monthlyAvg').innerText += " " + data.monthlyAvg;
+                document.getElementById('totalEggs').innerText += " " + data.totalEggs;
+            } catch (error) {
+                document.getElementById('content').innerText = 'Error fetching data: ' + error.message;
+            }
+        }
+
+        async function addNewEggs() {
+            const eggsToAdd = document.getElementById('fnewEggs').value;
+            try {
+                const response = await fetch('/eggs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ eggsToAdd })
+                });
+                const message = await response.text();
+                document.getElementById('content').innerText = message;
+                getCurrentEggData(); // Refresh the data
+            } catch (error) {
+                document.getElementById('content').innerText = 'Error adding eggs: ' + error.message;
+            }
+        }
+
+        window.onload = getCurrentEggData;
+    </script>
+</body>
+
+</html>

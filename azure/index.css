@@ -1,0 +1,144 @@
+/* Basic CSS File */
+
+/* Reset some default browser styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Body styling */
+  body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #000000;
+    color: #fdfbfb;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  /* Header styling */
+  head {
+    background: #333;
+    color: #1e92bc;
+    padding: 10px 0;
+    text-align: center;
+  }
+  div {
+    text-align: inherit;
+    line-height: 1.6;
+  }
+  
+  
+  h1 {
+    margin: 0;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: medium;
+    font-style: normal;
+  }
+
+  .statsContainer {
+    line-height: 1.6;
+    position: absolute;
+    transform: translateX(calc(-190% / 2));
+    
+  }
+  .advStatsContainer {
+    line-height: 1.6;
+    position: absolute;
+    transform: translateX(calc(50% / 2));
+    
+  }
+
+  .avgStatsContainer {
+    line-height: 1.6;
+    position: absolute;
+    transform: translateX(calc(300% / 2));
+    
+  }
+
+  .statsBlock {
+    display: inline-block;
+    width: 200px;
+    transform: translateX(calc(50%/2));
+  }
+
+  .mon {
+    color: red;
+  }
+  .tue {
+    color: orange;
+  }
+  .wed {
+    color: yellow;
+  }
+  .thu {
+    color: green;
+  }
+  .fri {
+    color: blue;
+  }
+  .sat {
+    color: indigo;
+  }
+  .sun {
+    color: violet;
+  }
+
+  form {
+    transform: translateY(300%);
+  }
+
+  pre {
+    transform: translateY(600%);
+  }
+
+  
+  /* Navigation styling */
+  nav {
+    margin: 20px 0;
+    text-align: center;
+  }
+  
+  nav a {
+    color: #333;
+    text-decoration: none;
+    margin: 0 10px;
+  }
+  
+  nav a:hover {
+    color: #007BFF;
+  }
+  
+  /* Main content styling */
+  main {
+    background: #fff;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Paragraph styling */
+  p {
+    margin: 10px 0;
+  }
+  
+  /* Button styling */
+  button {
+    background: #007BFF;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  button:hover {
+    background: #0056b3;
+  }
+
+  

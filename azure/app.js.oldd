@@ -1,0 +1,400 @@
+document.write(`
+    <!DOCTYPE html>
+    <html>
+    
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Egg Counter</title>
+        <style>
+            /* Basic CSS File */
+            
+            /* Reset some default browser styles */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            /* Body styling */
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                background-color: #000000;
+                color: #fdfbfb;
+                padding: 20px;
+                text-align: center;
+            }
+            
+            /* Header styling */
+            head {
+                background: #333;
+                color: #1e92bc;
+                padding: 10px 0;
+                text-align: center;
+            }
+            
+            div {
+                text-align: inherit;
+                line-height: 1.6;
+            }
+            
+            h1 {
+                margin: 0;
+            }
+            
+            h2 {
+                margin: 0;
+                font-size: medium;
+                font-style: normal;
+            }
+            
+            .statsContainer {
+                line-height: 1.6;
+                position: absolute;
+                transform: translateX(calc(-190% / 2));
+            }
+            
+            .advStatsContainer {
+                line-height: 1.6;
+                position: absolute;
+                transform: translateX(calc(50% / 2));
+            }
+            
+            .avgStatsContainer {
+                line-height: 1.6;
+                position: absolute;
+                transform: translateX(calc(300% / 2));
+            }
+            
+            .statsBlock {
+                display: inline-block;
+                width: 200px;
+                transform: translateX(calc(50%/2));
+            }
+            
+            .mon {
+                color: red;
+            }
+            
+            .tue {
+                color: orange;
+            }
+            
+            .wed {
+                color: yellow;
+            }
+            
+            .thu {
+                color: green;
+            }
+            
+            .fri {
+                color: blue;
+            }
+            
+            .sat {
+                color: indigo;
+            }
+            
+            .sun {
+                color: violet;
+            }
+            
+            form {
+                transform: translateY(300%);
+            }
+            
+            pre {
+                transform: translateY(600%);
+            }
+            
+            /* Navigation styling */
+            nav {
+                margin: 20px 0;
+                text-align: center;
+            }
+            
+            nav a {
+                color: #333;
+                text-decoration: none;
+                margin: 0 10px;
+            }
+            
+            nav a:hover {
+                color: #007BFF;
+            }
+            
+            /* Main content styling */
+            main {
+                background: #fff;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            
+            /* Paragraph styling */
+            p {
+                margin: 10px 0;
+            }
+            
+            /* Button styling */
+            button {
+                background: #007BFF;
+                color: #fff;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            
+            button:hover {
+                background: #0056b3;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <h1>How many eggs to add?</h1>
+        <br>
+        <div class="statsBlock">
+            <div class="statsContainer">
+                <h2 id="dailyAvg">Daily Avg: </h2>
+                <h2 id="weeklyAvg">Weekly Avg: </h2>
+                <h2 id="monthlyAvg">Monthly Avg: </h2>
+                <h2 id="totalEggs">Total: </h2>
+            </div>
+            <div class="advStatsContainer">
+                <h2 id="monTot" class="mon">Mon: </h2>
+                <h2 id="tueTot" class="tue">Tue: </h2>
+                <h2 id="wedTot" class="wed">Wed: </h2>
+                <h2 id="thuTot" class="thu">Thu: </h2>
+                <h2 id="friTot" class="fri">Fri: </h2>
+                <h2 id="satTot" class="sat">Sat: </h2>
+                <h2 id="sunTot" class="sun">Sun: </h2>
+            </div>
+            <div class="avgStatsContainer">
+                <h2 id="monAvg" class="mon">Avg: </h2>
+                <h2 id="tueAvg" class="tue">Avg: </h2>
+                <h2 id="wedAvg" class="wed">Avg: </h2>
+                <h2 id="thuAvg" class="thu">Avg: </h2>
+                <h2 id="friAvg" class="fri">Avg: </h2>
+                <h2 id="satAvg" class="sat">Avg: </h2>
+                <h2 id="sunAvg" class="sun">Avg: </h2>
+            </div>
+        </div>
+        <br>
+        <form id="eggForm" onsubmit="return false">
+            <label for="fnewEggs">Enter number of eggs:</label><br>
+            <input type="text" inputmode="numeric" pattern="[0-9]" required id="fnewEggs" name="fnewEggs"><br>
+            <input type="button" value="Add" id="add_button" onclick="addNewEggs()">
+        </form>
+    
+        <pre id="content" style="white-space: pre-wrap;"></pre>
+    
+        <script>
+            async function getCurrentEggData() {
+                try {
+                    const response = await fetch('/eggs');
+                    const data = await response.json();
+                    document.getElementById('dailyAvg').innerText += " " + data.dailyAvg;
+                    document.getElementById('weeklyAvg').innerText += " " + data.weeklyAvg;
+                    document.getElementById('monthlyAvg').innerText += " " + data.monthlyAvg;
+                    document.getElementById('totalEggs').innerText += " " + data.totalEggs;
+                } catch (error) {
+                    document.getElementById('content').innerText = 'Error fetching data: ' + error.message;
+                }
+            }
+    
+            async function addNewEggs() {
+                const eggsToAdd = document.getElementById('fnewEggs').value;
+                try {
+                    const response = await fetch('/eggs', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ eggsToAdd })
+                    });
+                    const message = await response.text();
+                    document.getElementById('content').innerText = message;
+                    getCurrentEggData(); // Refresh the data
+                } catch (error) {
+                    document.getElementById('content').innerText = 'Error adding eggs: ' + error.message;
+                }
+            }
+    
+            window.onload = getCurrentEggData;
+        </script>
+    </body>
+    
+    </html>
+    `);
+    
+    const express = require('express');
+    const { google } = require('googleapis');
+    const bodyParser = require('body-parser');
+    
+    // Initialize the express application
+    const app = express();
+    app.use(bodyParser.json());
+    
+    // TODO: Set to client ID and API key from the Developer Console
+    const CLIENT_ID = process.env.CLIENT_ID;
+    const CLIENT_SECRET = process.env.CLIENT_SECRET;
+    const REDIRECT_URI = process.env.REDIRECT_URI;
+    const API_KEY = process.env.API_KEY;
+    const CAL_ID = process.env.CAL_ID;
+    
+    // Discovery doc URL for APIs used by the quickstart
+    const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+    
+    // Authorization scopes required by the API; multiple scopes can be
+    // included, separated by spaces.
+    const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+    
+    const oAuth2Client = new google.auth.OAuth2(
+      CLIENT_ID,
+      CLIENT_SECRET,
+      REDIRECT_URI
+    );
+    
+    // Set yesterdays date
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0);
+    
+    const start = "2024-03-02";
+    const end = new Date().toISOString().split('T')[0];
+    const daysSince = (new Date(end) - new Date(start)) / (1000 * 3600 * 24);
+    
+    let currEggCount = 0;
+    
+    // Route to handle OAuth2 callback
+    app.get('/auth/callback', async (req, res) => {
+      const code = req.query.code;
+      const { tokens } = await oAuth2Client.getToken(code);
+      oAuth2Client.setCredentials(tokens);
+      res.send('Authentication successful! You can close this tab.');
+    });
+    
+    // Route to initiate authentication
+    app.get('/auth', (req, res) => {
+      const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: SCOPES,
+      });
+      res.redirect(authUrl);
+    });
+    
+    // Function to get current egg data
+    async function getCurrentEggData(auth) {
+      const calendar = google.calendar({ version: 'v3', auth });
+      try {
+        const response = await calendar.events.list({
+          calendarId: CAL_ID,
+          timeMin: yesterday.toISOString(),
+          timeMax: new Date().toISOString(),
+          showDeleted: false,
+          singleEvents: true,
+          maxResults: 15,
+        });
+    
+        const events = response.data.items;
+        if (!events || events.length === 0) {
+          return 'No events found.';
+        }
+    
+        let currCount = 0;
+        events.forEach(item => {
+          if (item.summary.includes('\uD83E\uDD5A')) {
+            let curr = item.summary.replace('\uD83E\uDD5A', '');
+            if (currCount < curr) {
+              currCount = curr;
+            }
+          }
+        });
+        currEggCount = currCount;
+    
+        const daily = currEggCount / daysSince;
+        const weekly = currEggCount / (daysSince / 7);
+        const monthly = currEggCount / (daysSince / 30);
+    
+        return {
+          dailyAvg: daily.toFixed(2),
+          weeklyAvg: weekly.toFixed(2),
+          monthlyAvg: monthly.toFixed(2),
+          totalEggs: currEggCount,
+        };
+      } catch (err) {
+        console.error(err.message);
+        throw new Error('Error fetching events.');
+      }
+    }
+    
+    // Route to get egg data
+    app.get('/eggs', async (req, res) => {
+      try {
+        const eggData = await getCurrentEggData(oAuth2Client);
+        res.json(eggData);
+      } catch (err) {
+        res.status(500).send(err.message);
+      }
+    });
+    
+    // Function to add new eggs
+    async function addNewEggs(auth, eggsToAdd) {
+      const calendar = google.calendar({ version: 'v3', auth });
+      const titleBase = '\uD83E\uDD5A';
+    
+      if (Number(eggsToAdd) > 10) {
+        return 'No way. Try again';
+      }
+    
+      for (let index = 1; index <= eggsToAdd; index++) {
+        let title = titleBase + (Number(currEggCount) + index);
+        const event = {
+          summary: title,
+          start: {
+            date: new Date().toISOString().split('T')[0],
+            timeZone: 'America/New_York',
+          },
+          end: {
+            date: new Date().toISOString().split('T')[0],
+            timeZone: 'America/New_York',
+          },
+          transparency: 'transparent',
+        };
+    
+        try {
+          await calendar.events.insert({
+            calendarId: CAL_ID,
+            resource: event,
+          });
+        } catch (err) {
+          console.error(err.message);
+          throw new Error('Error adding new eggs.');
+        }
+      }
+    
+      return `${eggsToAdd} Eggs Added`;
+    }
+    
+    // Route to add new eggs
+    app.post('/eggs', async (req, res) => {
+      const { eggsToAdd } = req.body;
+      try {
+        const message = await addNewEggs(oAuth2Client, eggsToAdd);
+        res.send(message);
+      } catch (err) {
+        res.status(500).send(err.message);
+      }
+    });
+    
+    // Start the server
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+        

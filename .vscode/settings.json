@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/e9b7f6ea-d699-485a-9731-d8472c18ae21/resourceGroups/EggCounterRG/providers/Microsoft.Web/sites/EggCounterWA",
+    "appService.deploySubpath": "azure"
+}
